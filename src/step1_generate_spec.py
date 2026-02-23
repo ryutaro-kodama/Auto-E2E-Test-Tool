@@ -4,77 +4,63 @@ import asyncio
 import argparse
 from dotenv import load_dotenv
 from llm_factory import get_llm
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain.tools import Tool
+from langchain.agents import create_agent
 from langchain_core.prompts import ChatPromptTemplate
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_mcp_adapters.tools import load_mcp_tools
 
 async def run_agent(args, source_content, api_content):
-    # MCP Server settings for Playwright
-    # npx must be available in PATH, and @modelcontextprotocol/server-playwright should execute successfully
-    server_params = StdioServerParameters(
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-playwright"],
-        env=None
+
+    # MCPクライアントの生成
+    client = MultiServerMCPClient(
+        {
+            "playwright": {
+                "transport": "http",
+                "url": "http://host.docker.internal:9222/mcp"
+            }
+        }
     )
     
-    async with stdio_client(server_params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            
-            mcp_tools = await session.list_tools()
-            langchain_tools = []
-            
-            for tool in mcp_tools.tools:
-                def create_mcp_wrapper(t=tool):
-                    async def wrapper(*args_list, **tool_input):
-                        result = await session.call_tool(t.name, tool_input)
-                        texts = []
-                        if isinstance(result.content, list):
-                            for c in result.content:
-                                if getattr(c, 'type', '') == 'text':
-                                    texts.append(c.text)
-                                elif isinstance(c, dict) and c.get('type') == 'text':
-                                    texts.append(c.get('text', ''))
-                        return "\n".join(texts) if texts else str(result.content)
-                    return wrapper
+    # エージェントのメイン処理ではMCPクライアントのsessionを維持する
+    # そうしないと、Playwrightで「ブラウザでの一連の操作」を扱えない
+    async with client.session("playwright") as session:
 
-                langchain_tools.append(Tool(
-                    name=tool.name,
-                    func=lambda *args, **kwargs: "同期実行はサポートされていません。非同期で実行してください。",
-                    coroutine=create_mcp_wrapper(),
-                    description=tool.description
-                ))
+        # MCPクライアントのsessionからMCPで定義されているtoolを取得します
+        # langchainではMCPサーバをToolと同様に利用することができます
+        tools = await load_mcp_tools(session)
 
-            llm = get_llm()
-            
-            resource_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "resource")
-            with open(os.path.join(resource_dir, "step1_system_prompt.md"), "r", encoding="utf-8") as f:
-                system_prompt_text = f.read()
-            with open(os.path.join(resource_dir, "step1_human_prompt.md"), "r", encoding="utf-8") as f:
-                human_prompt_text = f.read()
+        llm = get_llm()
+        
+        resource_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "resource")
+        with open(os.path.join(resource_dir, "step1_system_prompt.md"), "r", encoding="utf-8") as f:
+            system_prompt_text = f.read()
+        with open(os.path.join(resource_dir, "step1_human_prompt.md"), "r", encoding="utf-8") as f:
+            human_prompt_text = f.read()
 
-            prompt = ChatPromptTemplate.from_messages([
-                ("system", system_prompt_text),
-                ("placeholder", "{chat_history}"),
-                ("human", human_prompt_text),
-                ("placeholder", "{agent_scratchpad}"),
-            ])
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt_text),
+            ("placeholder", "{chat_history}"),
+            ("human", human_prompt_text),
+            ("placeholder", "{agent_scratchpad}"),
+        ])
 
-            agent = create_tool_calling_agent(llm, langchain_tools, prompt)
-            agent_executor = AgentExecutor(agent=agent, tools=langchain_tools, verbose=True)
-            
-            query = "既存システムの画面を解釈し、新システムのソースとAPI仕様を考慮したE2Eテスト仕様書を作成してください。"
-            
-            result = await agent_executor.ainvoke({
-                "existing_url": args.existing_url,
-                "source_code": source_content,
-                "api_spec": api_content,
-                "input": query
-            })
-            
-            return result["output"]
+
+        # 実行
+        agent = create_agent(model=llm, tools=tools, system_prompt=system_prompt_text)
+        chain = prompt | agent
+        
+        query = "既存システムの画面を解釈し、新システムのソースとAPI仕様を考慮したE2Eテスト仕様書を作成してください。"
+        
+        result = await chain.ainvoke({
+        # result = await agent_executor.ainvoke({
+            "existing_url": args.existing_url,
+            "source_code": source_content,
+            "api_spec": api_content,
+            "input": query
+        })
+
+        # 最後の"Message"を取得
+        return result["messages"][-1].text
 
 def main():
     parser = argparse.ArgumentParser(description="Auto E2E Test Tool - Step 1: Generate Test Specification")

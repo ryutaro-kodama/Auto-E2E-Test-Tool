@@ -19,11 +19,14 @@
             }
         }
     },
+    "runArgs": [
+        "--add-host=host.docker.internal:host-gateway"
+    ],
     // コンテナ作成後にライブラリを自動インストール
     // プロジェクト内に .venv を作る設定を挟むのがコツです
-    "postCreateCommand": "poetry config virtualenvs.in-project true && poetry install",
+    "postCreateCommand": "poetry config virtualenvs.in-project true && poetry install --no-root",
     // マウントさせる場合、以下に記載
-    // "mounts": [
-    //     "source=path/to/source,target=path/to/target,type=bind"
-    // ]
+    "mounts": [
+        "source=../,target=/mnt/pgm,type=bind"
+    ]
 }
