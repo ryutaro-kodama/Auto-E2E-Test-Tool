@@ -52,7 +52,6 @@ async def run_agent(args, source_content, api_content):
         query = "既存システムの画面を解釈し、新システムのソースとAPI仕様を考慮したE2Eテスト仕様書を作成してください。"
         
         result = await chain.ainvoke({
-        # result = await agent_executor.ainvoke({
             "existing_url": args.existing_url,
             "source_code": source_content,
             "api_spec": api_content,
