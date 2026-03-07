@@ -13,8 +13,6 @@ def main():
     args = parser.parse_args()
     
     load_dotenv()
-    
-
         
     try:
         with open(args.spec_file, "r", encoding="utf-8") as f:

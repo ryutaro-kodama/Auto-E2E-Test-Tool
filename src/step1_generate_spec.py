@@ -16,7 +16,7 @@ async def run_agent(args, source_content, api_content):
         {
             "playwright": {
                 "transport": "http",
-                "url": "http://host.docker.internal:9222/mcp"
+                "url": "http://host.docker.internal:9223/mcp"
             }
         }
     )

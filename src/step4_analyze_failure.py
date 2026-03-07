@@ -8,7 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 def main():
     parser = argparse.ArgumentParser(description="Auto E2E Test Tool - Step 4: Analyze Failure")
     parser.add_argument("source_file", help="Path to the screen source code (e.g., HTML, TSX, Vue)")
-    parser.add_argument("test_result_file", help="Path to the Test Result (Markdown)")
+    parser.add_argument("test_result_file", help="Path to the Test Result (HTML)")
     parser.add_argument("--output", default="修正方針.md", help="Output Failure Analysis Markdown file")
     
     args = parser.parse_args()
