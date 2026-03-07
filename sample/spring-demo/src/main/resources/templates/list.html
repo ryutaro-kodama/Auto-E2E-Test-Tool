@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>従業員一覧</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .search-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .search-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .search-item label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select {
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input[type="text"] {
+            width: 150px;
+        }
+
+        button {
+            padding: 6px 15px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .clear-btn {
+            margin-left: 10px;
+            text-decoration: none;
+            color: #d9534f;
+            font-size: 14px;
+        }
+
+        .clear-btn:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>従業員一覧</h2>
+
+    <div class="search-container">
+        <form action="/" method="get" class="search-form">
+            <div class="search-item">
+                <label for="name">名前:</label>
+                <input type="text" id="name" name="name" th:value="${name}" placeholder="名前">
+            </div>
+            <div class="search-item">
+                <label for="gender">性別:</label>
+                <select id="gender" name="gender">
+                    <option value="">指定なし</option>
+                    <option value="男性" th:selected="${gender == '男性'}">男性</option>
+                    <option value="女性" th:selected="${gender == '女性'}">女性</option>
+                </select>
+            </div>
+            <div class="search-item">
+                <label for="birthdate">生年月日:</label>
+                <input type="date" id="birthdate" name="birthdate" th:value="${birthdate}">
+            </div>
+            <div class="search-item">
+                <label for="remarks">備考:</label>
+                <input type="text" id="remarks" name="remarks" th:value="${remarks}" placeholder="備考">
+            </div>
+            <div class="search-item">
+                <button type="submit">検索</button>
+                <a th:if="${isSearchActive}" href="/" class="clear-btn">クリア</a>
+            </div>
+        </form>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>名前</th>
+                <th>性別</th>
+                <th>生年月日</th>
+                <th>備考</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="person : ${people}">
+                <td th:text="${person.name}">名前</td>
+                <td th:text="${person.gender}">性別</td>
+                <td th:text="${person.birthdate}">生年月日</td>
+                <td th:text="${person.remarks}">備考</td>
+            </tr>
+            <tr th:if="${people.empty}">
+                <td colspan="4" style="text-align: center;">データが見つかりませんでした</td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+
+</html>

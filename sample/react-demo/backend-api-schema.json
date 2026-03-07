@@ -1,0 +1,95 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Employee Admin API",
+        "version": "1.0.0",
+        "description": "Backend API for managing employees, expected to be implemented in Spring Boot."
+    },
+    "paths": {
+        "/api/employees": {
+            "get": {
+                "summary": "Search employees",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Partial match on employee name"
+                    },
+                    {
+                        "name": "gender",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Male",
+                                "Female",
+                                "Other"
+                            ]
+                        },
+                        "description": "Exact match on gender"
+                    },
+                    {
+                        "name": "dateOfBirth",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "description": "Exact match on date of birth (YYYY-MM-DD)"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A list of employees matching the criteria",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Employee"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Employee": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Unique identifier"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Employee full name"
+                    },
+                    "gender": {
+                        "type": "string",
+                        "enum": [
+                            "Male",
+                            "Female",
+                            "Other"
+                        ]
+                    },
+                    "dateOfBirth": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "YYYY-MM-DD format"
+                    }
+                }
+            }
+        }
+    }
+}
